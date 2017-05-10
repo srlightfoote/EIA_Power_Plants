@@ -10,7 +10,7 @@ library(stringr)
 
 shinyUI(
   navbarPage(
-    "EIA Power Plant Explorer", id="nav",
+    title = HTML(paste(icon('bolt'),'EIA Power Plant Explorer')), id="nav",
     tabPanel(
       "Map",
       div(class="outer",
