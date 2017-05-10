@@ -69,23 +69,6 @@ shinyServer(function(input, output,session) {
                 pal = pal, values = ~primsource,title = "Generator Type")
   })
   
-  #Add/ Remove Data Labels
-  observe({
-    showLabel<-showLabels()
-    if (showLabel==TRUE) {
-      data_in_extent<- dataset()
-      data_in_extent<-with(data_in_extent,data_in_extent[latitude>input$map_bounds$south &
-                                                           latitude<input$map_bounds$north &
-                                                           longitude>input$map_bounds$west &
-                                                           longitude<input$map_bounds$east,])
-      leafletProxy("map", data = data_in_extent) %>% 
-        clearPopups() %>% 
-        addPopups(lng = ~longitude,lat = ~latitude,popup = ~plant_name)
-    } else{
-      leafletProxy("map") %>% clearPopups() 
-    }
-  })
-  
   #change basemap
   observe({
     tile<-basemap()
