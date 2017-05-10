@@ -7,7 +7,10 @@ library(leaflet)
 library(RColorBrewer)
 library(shiny)
 library(stringr)
+library(dplyr)
+library(lubridate)
 
+#shinyUI
 shinyUI(
   navbarPage(
     title = HTML(paste(icon('bolt'),'EIA Power Plant Explorer')), id="nav",
@@ -38,7 +41,7 @@ shinyUI(
                                     c('viridis',rownames(subset(brewer.pal.info, category %in% c("seq", "div")))),
                                     selected ='viridis'),
                         checkboxInput('queryEIA','Query EIA Data',value = TRUE),
-                        plotOutput("eiaGen",height = 150)
+                        textOutput("ncf")
           )
       )
     ),

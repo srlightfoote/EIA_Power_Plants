@@ -1,6 +1,20 @@
 #### query EIA function ####
-queryEIA<-function(plantID,baseID,key){
-  eia.xts<-getEIA(ID = str_replace(baseID,'eiaid',as.character(plantID)),key = key)
+queryEIA<-function(baseID,key,selected_plant.dt){
+  eia.xts<-getEIA(ID = str_replace(baseID,'eiaid',as.character(selected_plant.dt$plant_code)),key = key)
+  #calculate historical net capacity factor
+  eia.dt<-as.data.table(eia.xts)
+  names(eia.dt)<-c('Date','mwh')
+  eia.dt$mwh[eia.dt$mwh==0]<-NA #remove zero production months from data record
+  eia.dt$month<-month(eia.dt$Date)
+  eia.dt$daysInMonth<-days_in_month(eia.dt$Date)
+  eia.lt<-eia.dt %>% group_by(month) %>% 
+    summarise(meanGen=mean(mwh,na.rm=TRUE),meanDays=mean(daysInMonth))
+  eia.lt$plant_code<-selected_plant.dt$plant_code
+  eia.lt<-merge(eia.lt,plants.dt[,c('plant_code','total_mw'),with=FALSE],all.x=TRUE,all.y=FALSE)
+  eia.lt<-mutate(eia.lt,ncf=meanGen/(meanDays*total_mw*24))
+  ncf.ann<-sum(eia.lt$meanGen)/(sum(eia.lt$meanDays)*24*mean(eia.lt$total_mw))
+  eia.ls<-list(eia.xts=eia.xts,eia.dt=eia.dt,eia.lt=eia.lt,ncf.ann=ncf.ann)
+  return(eia.ls)
 }
 
 #define EIA key + data channel
@@ -96,23 +110,18 @@ shinyServer(function(input, output,session) {
     })
     
     #query EIA
-    if(input$queryEIA){
-      if(sum(as.numeric(selected_plant.dt$plant_code),na.rm=TRUE)>0){
-        #query the EIA Data
-        eia.xts<-queryEIA(selected_plant.dt$plant_code,baseID,key)
-        activeData$eia.xts<-eia.xts
-        #show mini-plot in map
-        output$eiaGen<-renderPlot({
-          plot(eia.xts,main =selected_plant.dt$plant_name,
-               ylab = 'MWh',cex.main=.75,cex.axis=.5,cex.lab=.5)
-        })
-        output$eiaMonthlyGen<-renderDygraph(
-          dygraph(eia.xts,main=selected_plant.dt$plant_name,
-                  xlab = 'Date',ylab = 'MWh') %>% 
-            dyOptions(axisLabelFontSize = 10)  %>% 
-            dyRoller(rollPeriod = 1)
-        )
-      }
+    if(input$queryEIA &sum(as.numeric(selected_plant.dt$plant_code),na.rm=TRUE)>0){
+      #query the EIA Data
+      eia.ls<-queryEIA(baseID,key,selected_plant.dt)
+      activeData$eia.dt<-eia.ls$eia.dt
+      
+      output$ncf<-renderText(paste('NCF = ',round(eia.ls$ncf.ann*1000)/10,'%',sep=''))
+      output$eiaMonthlyGen<-renderDygraph(
+        dygraph(eia.ls$eia.xts,main=selected_plant.dt$plant_name,
+                xlab = 'Date',ylab = 'MWh') %>% 
+          dyOptions(axisLabelFontSize = 10)  %>% 
+          dyRoller(rollPeriod = 1)
+      )
     }
   })
   
@@ -135,29 +144,25 @@ shinyServer(function(input, output,session) {
     })
     
     #query EIA
-    if(input$queryEIA){
-      if(sum(as.numeric(selected_plant.dt$plant_code),na.rm=TRUE)>0){
-        #query the EIA Data
-        eia.xts<-queryEIA(selected_plant.dt$plant_code,baseID,key)
-        activeData$eia.xts<-eia.xts
-        #show mini-window in map
-        output$eiaGen<-renderPlot({
-          plot(eia.xts,main = paste(selected_plant.dt$plant_name,' Net MWh',sep=''),ylab = 'MWh')
-        })
-        output$eiaMonthlyGen<-renderDygraph(
-          dygraph(eia.xts,main=selected_plant.dt$plant_name,
-                  xlab = 'Date',ylab = 'MWh') %>% 
-            dyOptions(axisLabelFontSize = 10)  %>% 
-            dyRoller(rollPeriod = 1)
-        )
-      }
+    if(input$queryEIA &sum(as.numeric(selected_plant.dt$plant_code),na.rm=TRUE)>0){
+      #query the EIA Data
+      eia.ls<-queryEIA(baseID,key,selected_plant.dt)
+      activeData$eia.dt<-eia.ls$eia.dt
+
+      output$ncf<-renderText(paste('NCF = ',round(eia.ls$ncf.ann*1000)/10,'%',sep=''))
+      output$eiaMonthlyGen<-renderDygraph(
+        dygraph(eia.ls$eia.xts,main=paste(selected_plant.dt$plant_name,': NCF = ',round(eia.ls$ncf.ann*1000)/10,'%',sep=''),
+                xlab = 'Date',ylab = 'MWh') %>% 
+          dyOptions(axisLabelFontSize = 10)  %>% 
+          dyRoller(rollPeriod = 1)
+      )
     }
   })
   
   #export EIA data to CSV
   output$exportEIA <- downloadHandler(
     filename = function() { paste(activeData$selected_plant.dt$plant_name,'_EIA_data.csv',sep='')},
-    content = function(con) { write.csv(as.data.table(activeData$eia.xts), con,row.names = FALSE)}
+    content = function(con) { write.csv(as.data.table(activeData$eia.dt), con,row.names = FALSE)}
   )
   
 })
