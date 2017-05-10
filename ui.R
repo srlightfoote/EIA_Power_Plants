@@ -43,17 +43,12 @@ shinyUI(
       )
     ),
     tabPanel('Data',
-             sidebarLayout(
-               sidebarPanel(
-                 downloadButton('exportEIA','Export EIA Data'),
-                 h4(),
-                 dygraphOutput("eiaMonthlyGen",height = 400)
-               ),
-               mainPanel(
-                 div(DT::dataTableOutput("Table"), style = "font-size: 75%; width: 75%")
-                 
-               )
-             )
+             helpText('Clicking on a data table row triggers the data query the map will zoom to the project location'),
+             downloadButton('exportEIA','Export EIA Data'),
+             h4(),
+             dygraphOutput("eiaMonthlyGen",height = 300),
+             h4(),
+             div(DT::dataTableOutput("Table"), style = "font-size: 75%; width: 75%")
     )
   )
 )
