@@ -43,7 +43,7 @@ shinyUI(
       )
     ),
     tabPanel('Data',
-             helpText('Clicking on a data table row triggers the data query the map will zoom to the project location'),
+             helpText('Clicking on a data table row triggers the data query and the map will zoom to the project location'),
              downloadButton('exportEIA','Export EIA Data'),
              h4(),
              dygraphOutput("eiaMonthlyGen",height = 300),
