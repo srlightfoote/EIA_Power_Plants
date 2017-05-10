@@ -37,7 +37,6 @@ shinyUI(
                         selectInput("colors", "Color Scheme",
                                     c('viridis',rownames(subset(brewer.pal.info, category %in% c("seq", "div")))),
                                     selected ='viridis'),
-                        checkboxInput('labels','Show labels'),
                         checkboxInput('queryEIA','Query EIA Data',value = TRUE),
                         plotOutput("eiaGen",height = 150)
           )
