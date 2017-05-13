@@ -4,7 +4,7 @@ queryEIA<-function(plantID,baseID,key){
 }
 
 #define EIA key + data channel
-key<-'743E7EEB9DD74A8FBD876F83F1196F8D'
+key<-'<paste your key here>'
 baseID<-'ELEC.PLANT.GEN.eiaid-ALL-ALL.M'
 
 #### import EIA data ####
